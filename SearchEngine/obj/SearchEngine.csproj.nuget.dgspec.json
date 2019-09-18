@@ -1,24 +1,26 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\llund\\source\\repos\\SearchEngine\\SearchEngine\\SearchEngine.csproj": {}
+    "C:\\Git Rrepositories\\WISearchEngine\\SearchEngine\\SearchEngine.csproj": {}
   },
   "projects": {
-    "C:\\Users\\llund\\source\\repos\\SearchEngine\\SearchEngine\\SearchEngine.csproj": {
+    "C:\\Git Rrepositories\\WISearchEngine\\SearchEngine\\SearchEngine.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\llund\\source\\repos\\SearchEngine\\SearchEngine\\SearchEngine.csproj",
+        "projectUniqueName": "C:\\Git Rrepositories\\WISearchEngine\\SearchEngine\\SearchEngine.csproj",
         "projectName": "SearchEngine",
-        "projectPath": "C:\\Users\\llund\\source\\repos\\SearchEngine\\SearchEngine\\SearchEngine.csproj",
-        "packagesPath": "C:\\Users\\llund\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\llund\\source\\repos\\SearchEngine\\SearchEngine\\obj\\",
+        "projectPath": "C:\\Git Rrepositories\\WISearchEngine\\SearchEngine\\SearchEngine.csproj",
+        "packagesPath": "C:\\Users\\Lasse Lundbo\\.nuget\\packages\\",
+        "outputPath": "C:\\Git Rrepositories\\WISearchEngine\\SearchEngine\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
+          "C:\\ProgramData\\Xamarin\\NuGet\\",
           "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
         ],
         "configFilePaths": [
-          "C:\\Users\\llund\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Users\\Lasse Lundbo\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
         ],
         "originalTargetFrameworks": [
           "netcoreapp2.1"
@@ -41,6 +43,10 @@
       "frameworks": {
         "netcoreapp2.1": {
           "dependencies": {
+            "HtmlAgilityPack": {
+              "target": "Package",
+              "version": "[1.11.12, )"
+            },
             "Microsoft.NETCore.App": {
               "target": "Package",
               "version": "[2.1.0, )",

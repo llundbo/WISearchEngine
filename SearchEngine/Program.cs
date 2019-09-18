@@ -7,6 +7,8 @@ namespace SearchEngine
         static void Main(string[] args)
         {
             Crawler crawler = new Crawler();
+
+            Console.ReadKey();
         }
     }
 }

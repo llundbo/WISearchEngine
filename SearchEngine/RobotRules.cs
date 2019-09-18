@@ -46,7 +46,6 @@ namespace SearchEngine
                 }
 
                 Console.WriteLine("Delay: " + Delay);
-                Console.ReadKey();
             }
 
             if(AllowedUrls.Count > 0)
