@@ -5,6 +5,7 @@ using System.Text;
 using System.Linq;
 using System.Text.RegularExpressions;
 using HtmlAgilityPack;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SearchEngine
@@ -13,7 +14,7 @@ namespace SearchEngine
     {
         private List<Uri> SeedURLs = new List<Uri>();
         private Dictionary<string, RobotRules> RulesList = new Dictionary<string, RobotRules>();
-        private Dictionary<string, QueueEntry> UrlQueue = new Dictionary<string, QueueEntry>();
+        private volatile Dictionary<string, QueueEntry> UrlQueue = new Dictionary<string, QueueEntry>();
 
         public Crawler()
         {
@@ -64,17 +65,23 @@ namespace SearchEngine
                         {
                             result = client.DownloadString(robotURL).Replace("http://", "https://");
                             if (!string.IsNullOrEmpty(result))
+                            {
+                                if (!RulesList.ContainsKey(url.Host))
+                                    RulesList.Add(url.Host, new RobotRules(result));
                                 break;
+                            }
+
                         }
-
                         else
+                        {
                             result = client.DownloadString(robotURL).Replace("https://", "http://");
-
-                        if (!RulesList.ContainsKey(url.Host))
-                            RulesList.Add(url.Host, new RobotRules(result));
+                            if (!RulesList.ContainsKey(url.Host))
+                                RulesList.Add(url.Host, new RobotRules(result));
+                        }
                     }
                     catch (WebException)
                     {
+                        continue;
                     }
                 }
                 
@@ -161,17 +168,28 @@ namespace SearchEngine
                         }
                     }
 
-                    if (allowed)
+                    bool done = false;
+                    while(!done)
                     {
-                        foreach (var suburl in UrlQueue[url.Host].SubURLs)
+                        if(0 == Interlocked.Exchange(ref UrlQueue[url.Host].SubURLListMutex, 1))
                         {
-                            if (suburl.Url == url)
-                                allowed = false;
-                        }
-                    }
+                            if (allowed)
+                            {
+                                foreach (var suburl in UrlQueue[url.Host].SubURLs)
+                                {
+                                    if (suburl.Url == url)
+                                        allowed = false;
+                                }
+                            }
 
-                    if (allowed)
-                        UrlQueue[url.Host].SubURLs.Add(new SubURL(url));
+                            if (allowed)
+                                UrlQueue[url.Host].SubURLs.Add(new SubURL(url));
+
+                            Interlocked.Exchange(ref UrlQueue[url.Host].SubURLListMutex, 0);
+                            done = true;
+                        }
+                        
+                    }
                 }
                     
                 else
@@ -209,38 +227,7 @@ namespace SearchEngine
         {
             int pageCount = 0;
 
-            do
-            {
-                foreach (string entry in UrlQueue.Keys.ToArray())
-                {
-                    if (pageCount >= 1000)
-                        break;
-
-                    if (!(DateTime.Now > UrlQueue[entry].LastVisited.AddSeconds(UrlQueue[entry].CrawlDelay)))
-                    {
-                        //Console.WriteLine("Delaying the access to:" + entry);
-                        continue;
-                    }
-
-                    int idx = FindNextIndex(UrlQueue[entry].SubURLs);
-
-                    if (idx == -1)
-                        continue;
-
-                    Console.WriteLine("Fetching from: " + UrlQueue[entry].SubURLs[idx].ToString());
-                    FetchData(UrlQueue[entry].SubURLs[idx].ToString());
-
-                    UrlQueue[entry].LastVisited = DateTime.Now;
-
-                    UrlQueue[entry].SubURLs[idx].Visited = true;
-
-                    pageCount++;
-                    Console.WriteLine("PageCount: " + pageCount);
-                }
-            } while (pageCount < 1000);
-
-
-            /*int numOfThreads = 4;
+            int numOfThreads = 4;
 
             List<Task> tasklist = new List<Task>();
 
@@ -248,22 +235,61 @@ namespace SearchEngine
             {
                 tasklist.Add(Task.Run(() =>
                 {
-                    
+                    do
+                    {
+                        var threadKeys = UrlQueue.Keys.ToArray();
+
+                        foreach (string entry in threadKeys)
+                        {
+                            if (pageCount >= 1000)
+                                break;
+
+                            if (!(DateTime.Now > UrlQueue[entry].LastVisited.AddSeconds(UrlQueue[entry].CrawlDelay)))
+                            {
+                                //Console.WriteLine("Delaying the access to:" + entry);
+                                continue;
+                            }
+
+                            int idx = FindNextIndex(entry, UrlQueue[entry].SubURLs);
+
+                            if (idx == -1)
+                                continue;
+
+                            Console.WriteLine("Fetching from: " + UrlQueue[entry].SubURLs[idx].ToString());
+
+                            UrlQueue[entry].LastVisited = DateTime.Now;
+
+                            FetchData(UrlQueue[entry].SubURLs[idx].ToString());
+
+                            pageCount++;
+                            Console.WriteLine("PageCount: " + pageCount);
+                        }
+
+                    } while (pageCount < 1000);
 
                 }));
             }
 
-            Task.WaitAll(tasklist.ToArray());*/
+            Task.WaitAll(tasklist.ToArray());
 
             Console.WriteLine("Queue Handler Complete...");
         }
 
-        private int FindNextIndex(List<SubURL> suburls)
+        private int FindNextIndex(string host,List<SubURL> suburls)
         {
-            foreach (var url in suburls)
+            foreach (var url in suburls.ToArray())
             {
-                if (url.Visited == false)
-                    return suburls.IndexOf(url);
+                if (0 == Interlocked.Exchange(ref UrlQueue[host].VisitMutex, 1))
+                {
+                    if (url.Visited == false)
+                    {
+                        url.Visited = true;
+                        Interlocked.Exchange(ref UrlQueue[host].VisitMutex, 0);
+                        return suburls.IndexOf(url);
+                    }
+                }
+                else
+                    return -1;
             }
 
             return -1;

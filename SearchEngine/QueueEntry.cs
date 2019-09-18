@@ -6,7 +6,9 @@ namespace SearchEngine
 {
     public class QueueEntry
     {
-        public List<SubURL> SubURLs = new List<SubURL>();
+        public int VisitMutex = 0;
+        public int SubURLListMutex = 0;
+        public volatile List<SubURL> SubURLs = new List<SubURL>();
         public int CrawlDelay;
         public DateTime LastVisited;
 
