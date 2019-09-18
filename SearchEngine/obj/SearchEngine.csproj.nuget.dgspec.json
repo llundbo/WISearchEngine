@@ -1,26 +1,24 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Git Rrepositories\\WISearchEngine\\SearchEngine\\SearchEngine.csproj": {}
+    "D:\\Repos\\WISearchEngine\\SearchEngine\\SearchEngine.csproj": {}
   },
   "projects": {
-    "C:\\Git Rrepositories\\WISearchEngine\\SearchEngine\\SearchEngine.csproj": {
+    "D:\\Repos\\WISearchEngine\\SearchEngine\\SearchEngine.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Git Rrepositories\\WISearchEngine\\SearchEngine\\SearchEngine.csproj",
+        "projectUniqueName": "D:\\Repos\\WISearchEngine\\SearchEngine\\SearchEngine.csproj",
         "projectName": "SearchEngine",
-        "projectPath": "C:\\Git Rrepositories\\WISearchEngine\\SearchEngine\\SearchEngine.csproj",
-        "packagesPath": "C:\\Users\\Lasse Lundbo\\.nuget\\packages\\",
-        "outputPath": "C:\\Git Rrepositories\\WISearchEngine\\SearchEngine\\obj\\",
+        "projectPath": "D:\\Repos\\WISearchEngine\\SearchEngine\\SearchEngine.csproj",
+        "packagesPath": "C:\\Users\\alec\\.nuget\\packages\\",
+        "outputPath": "D:\\Repos\\WISearchEngine\\SearchEngine\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "C:\\ProgramData\\Xamarin\\NuGet\\",
           "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
         ],
         "configFilePaths": [
-          "C:\\Users\\Lasse Lundbo\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
+          "C:\\Users\\alec\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "netcoreapp2.1"

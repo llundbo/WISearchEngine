@@ -6,13 +6,16 @@ namespace SearchEngine
 {
     public class QueueEntry
     {
-        public List<Uri> SubURLs = new List<Uri>();
+        public List<SubURL> SubURLs = new List<SubURL>();
         public int CrawlDelay;
         public DateTime LastVisited;
 
         public QueueEntry(List<Uri> inputlist, int delay)
         {
-            SubURLs = inputlist;
+            foreach (var url in inputlist)
+            {
+                SubURLs.Add(new SubURL(url));
+            }
             CrawlDelay = delay;
         }
     }

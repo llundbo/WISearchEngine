@@ -20,3 +20,14 @@ C:\Git Rrepositories\WISearchEngine\SearchEngine\obj\Debug\netcoreapp2.1\SearchE
 C:\Git Rrepositories\WISearchEngine\SearchEngine\obj\Debug\netcoreapp2.1\SearchEngine.AssemblyInfo.cs
 C:\Git Rrepositories\WISearchEngine\SearchEngine\obj\Debug\netcoreapp2.1\SearchEngine.dll
 C:\Git Rrepositories\WISearchEngine\SearchEngine\obj\Debug\netcoreapp2.1\SearchEngine.pdb
+D:\Repos\WISearchEngine\SearchEngine\bin\Debug\netcoreapp2.1\SearchEngine.deps.json
+D:\Repos\WISearchEngine\SearchEngine\bin\Debug\netcoreapp2.1\SearchEngine.runtimeconfig.json
+D:\Repos\WISearchEngine\SearchEngine\bin\Debug\netcoreapp2.1\SearchEngine.runtimeconfig.dev.json
+D:\Repos\WISearchEngine\SearchEngine\bin\Debug\netcoreapp2.1\SearchEngine.dll
+D:\Repos\WISearchEngine\SearchEngine\bin\Debug\netcoreapp2.1\SearchEngine.pdb
+D:\Repos\WISearchEngine\SearchEngine\obj\Debug\netcoreapp2.1\SearchEngine.csprojAssemblyReference.cache
+D:\Repos\WISearchEngine\SearchEngine\obj\Debug\netcoreapp2.1\SearchEngine.csproj.CoreCompileInputs.cache
+D:\Repos\WISearchEngine\SearchEngine\obj\Debug\netcoreapp2.1\SearchEngine.AssemblyInfoInputs.cache
+D:\Repos\WISearchEngine\SearchEngine\obj\Debug\netcoreapp2.1\SearchEngine.AssemblyInfo.cs
+D:\Repos\WISearchEngine\SearchEngine\obj\Debug\netcoreapp2.1\SearchEngine.dll
+D:\Repos\WISearchEngine\SearchEngine\obj\Debug\netcoreapp2.1\SearchEngine.pdb

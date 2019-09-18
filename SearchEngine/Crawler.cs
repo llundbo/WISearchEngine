@@ -5,6 +5,7 @@ using System.Text;
 using System.Linq;
 using System.Text.RegularExpressions;
 using HtmlAgilityPack;
+using System.Threading.Tasks;
 
 namespace SearchEngine
 {
@@ -18,20 +19,21 @@ namespace SearchEngine
         {
             AddSeeds();
             InitializeSeedsToQueue();
-            FetchData(SeedURLs[0].ToString());
+            HandleQueue();
+            Console.ReadKey();
         }
 
         private void AddSeeds()
         {                   
             SeedURLs.Add(new Uri("https://eb.dk"));
-            SeedURLs.Add(new Uri("http://migogaalborg.dk"));
-            SeedURLs.Add(new Uri("http://nyheder.tv2.dk"));
-            SeedURLs.Add(new Uri("https://bt.dk"));
-            SeedURLs.Add(new Uri("https://moodle.org"));
-            SeedURLs.Add(new Uri("https://dr.dk"));
-            SeedURLs.Add(new Uri("https://ing.dk"));
-            SeedURLs.Add(new Uri("https://nordjyske.dk"));
-            SeedURLs.Add(new Uri("https://aalborgnu.dk"));
+            //SeedURLs.Add(new Uri("https://migogaalborg.dk"));
+            //SeedURLs.Add(new Uri("https://nyheder.tv2.dk"));
+            //SeedURLs.Add(new Uri("https://bt.dk"));
+            //SeedURLs.Add(new Uri("https://moodle.org"));
+            //SeedURLs.Add(new Uri("https://dr.dk"));
+            //SeedURLs.Add(new Uri("https://ing.dk"));
+            //SeedURLs.Add(new Uri("https://nordjyske.dk"));
+            //SeedURLs.Add(new Uri("https://aalborgnu.dk"));
         }
 
         private void InitializeSeedsToQueue()
@@ -43,22 +45,42 @@ namespace SearchEngine
                 if (RulesList[seed.Host].DisallowedUrls.Contains("/"))
                     continue;
 
-                UrlQueue.Add(seed.ToString(), new QueueEntry(new List<Uri> { seed }, RulesList[seed.Host].Delay));
+                UrlQueue.Add(seed.Host, new QueueEntry(new List<Uri> { seed }, RulesList[seed.Host].Delay));
             }
         }
 
         private void GetRobotRules(Uri url)
         {
-            Uri robotURL = new Uri(url.ToString() + "/robots.txt");
-            string result;
+            Uri robotURL = new Uri(url.ToString() + (url.ToString().Last() == '/' ? "robots.txt" : "/robots.txt"));
+            string result = string.Empty;
 
             using (WebClient client = new WebClient())
             {
-                result = client.DownloadString(robotURL);
-            }
+                for (int i = 0; i < 2; i++)
+                {
+                    try
+                    {
+                        if (i == 0)
+                        {
+                            result = client.DownloadString(robotURL).Replace("http://", "https://");
+                            if (!string.IsNullOrEmpty(result))
+                                break;
+                        }
 
-            if (!RulesList.ContainsKey(url.Host))
-                RulesList.Add(url.Host, new RobotRules(result));
+                        else
+                            result = client.DownloadString(robotURL).Replace("https://", "http://");
+
+                        if (!RulesList.ContainsKey(url.Host))
+                            RulesList.Add(url.Host, new RobotRules(result));
+                    }
+                    catch (WebException)
+                    {
+                    }
+                }
+                
+                if(string.Empty == result)
+                    RulesList.Add(url.Host, new RobotRules(""));
+            }    
         }
 
         private void FetchData(string url)
@@ -67,25 +89,53 @@ namespace SearchEngine
             string content = string.Empty;
 
             HtmlWeb web = new HtmlWeb();
-            var doc = web.Load(url);
+            HtmlDocument doc;
 
-            foreach (HtmlNode link in doc.DocumentNode.SelectNodes("//a[@href]"))
+            try
             {
-                string href = link.OuterHtml.Split("\"")[1];
-
-                if (href.StartsWith("/"))
-                    href = url + href.Substring(1);
-                
-                if(href.StartsWith("http"))
-                    hyperlinks.Add(href);
+                doc = web.Load(url);
+            }
+            catch (Exception)
+            {
+                return;
             }
 
-            foreach (HtmlNode text in doc.DocumentNode.SelectNodes("//body"))
+            HtmlNodeCollection hyperNodes = doc.DocumentNode.SelectNodes("//a[@href]");
+
+            if(!(hyperNodes == null))
             {
-                if(!string.IsNullOrWhiteSpace(text.InnerText))
-                    content += text.InnerText.Trim().Replace("&nbsp", "");
+                foreach (HtmlNode link in hyperNodes)
+                {
+                    string href = string.Empty;
+
+                    try
+                    {
+                        href = link.OuterHtml.Split("\"")[1];
+                    }
+                    catch (IndexOutOfRangeException)
+                    {
+                        continue;
+                    }
+
+                    if (href.StartsWith("/"))
+                        href = url + href.Substring(1);
+
+                    if (href.StartsWith("http"))
+                        hyperlinks.Add(href);
+                }
             }
 
+            HtmlNodeCollection contentNodes = doc.DocumentNode.SelectNodes("//body");
+
+            if(!(contentNodes == null))
+            {
+                foreach (HtmlNode text in doc.DocumentNode.SelectNodes("//body"))
+                {
+                    if (!string.IsNullOrWhiteSpace(text.InnerText))
+                        content += text.InnerText.Trim().Replace("&nbsp", "");
+                }
+            }
+            
             content = Regex.Replace(content, @"\s+", " ");
             Regex rgx = new Regex("[^a-zA-Z0-9 -]");
             content = rgx.Replace(content, "");
@@ -97,10 +147,61 @@ namespace SearchEngine
         {
             foreach(string link in hyperlinks)
             {
-                Uri url = new Uri(link);
+                Uri url = new Uri(link.Replace("www.", ""));
 
-                if(UrlQueue.ContainsKey(url.Host))
+                if (UrlQueue.ContainsKey(url.Host))
+                {
+                    bool allowed = true;
+                    foreach (string seg in url.Segments)
+                    {
+                        if (RulesList[url.Host].DisallowedUrls.Contains(seg))
+                        {
+                            allowed = false;
+                            break;
+                        }
+                    }
 
+                    if (allowed)
+                    {
+                        foreach (var suburl in UrlQueue[url.Host].SubURLs)
+                        {
+                            if (suburl.Url == url)
+                                allowed = false;
+                        }
+                    }
+
+                    if (allowed)
+                        UrlQueue[url.Host].SubURLs.Add(new SubURL(url));
+                }
+                    
+                else
+                {
+                    try
+                    {
+                        GetRobotRules(new Uri("https://" + url.Host));
+                    }
+                    catch (WebException)
+                    {
+                        GetRobotRules(new Uri("http://" + url.Host));
+                    }
+                    
+                    if (RulesList[url.Host].DisallowedUrls.Contains("/"))
+                        continue;
+
+                    // Tjekker kun om /path/ er indeholdt i disallowed og ikke om /path/her/ er disallowed og f.eks. /path/hermådugernegåhen er allowed
+                    bool allowed = true;
+                    foreach (string seg in url.Segments)
+                    {
+                        if (RulesList[url.Host].DisallowedUrls.Contains(seg))
+                        {
+                            allowed = false;
+                            break;
+                        }
+                    }
+
+                    if(allowed && !UrlQueue.ContainsKey(url.Host))
+                        UrlQueue.Add(url.Host, new QueueEntry(new List<Uri> { url }, RulesList[url.Host].Delay));
+                }
             }
         }
 
@@ -110,21 +211,62 @@ namespace SearchEngine
 
             do
             {
-                foreach (string entry in UrlQueue.Keys)
+                foreach (string entry in UrlQueue.Keys.ToArray())
                 {
                     if (pageCount >= 1000)
                         break;
 
                     if (!(DateTime.Now > UrlQueue[entry].LastVisited.AddSeconds(UrlQueue[entry].CrawlDelay)))
+                    {
+                        //Console.WriteLine("Delaying the access to:" + entry);
+                        continue;
+                    }
+
+                    int idx = FindNextIndex(UrlQueue[entry].SubURLs);
+
+                    if (idx == -1)
                         continue;
 
-                    FetchData(UrlQueue[entry].SubURLs.First().ToString());
+                    Console.WriteLine("Fetching from: " + UrlQueue[entry].SubURLs[idx].ToString());
+                    FetchData(UrlQueue[entry].SubURLs[idx].ToString());
 
-                    UrlQueue[entry].SubURLs.RemoveAt(0);
+                    UrlQueue[entry].LastVisited = DateTime.Now;
+
+                    UrlQueue[entry].SubURLs[idx].Visited = true;
+
                     pageCount++;
+                    Console.WriteLine("PageCount: " + pageCount);
                 }
             } while (pageCount < 1000);
-            
+
+
+            /*int numOfThreads = 4;
+
+            List<Task> tasklist = new List<Task>();
+
+            for (int i = 0; i < numOfThreads; i++)
+            {
+                tasklist.Add(Task.Run(() =>
+                {
+                    
+
+                }));
+            }
+
+            Task.WaitAll(tasklist.ToArray());*/
+
+            Console.WriteLine("Queue Handler Complete...");
+        }
+
+        private int FindNextIndex(List<SubURL> suburls)
+        {
+            foreach (var url in suburls)
+            {
+                if (url.Visited == false)
+                    return suburls.IndexOf(url);
+            }
+
+            return -1;
         }
     }
 }

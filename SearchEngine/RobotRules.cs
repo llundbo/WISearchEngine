@@ -34,7 +34,7 @@ namespace SearchEngine
                         Delay = int.Parse(rule.Substring(12));
                 }
 
-                Console.WriteLine("Disallowed:");
+                /*Console.WriteLine("Disallowed:");
                 foreach (string line in DisallowedUrls)
                     Console.WriteLine(line);
 
@@ -45,7 +45,7 @@ namespace SearchEngine
                         Console.WriteLine(line);
                 }
 
-                Console.WriteLine("Delay: " + Delay);
+                Console.WriteLine("Delay: " + Delay);*/
             }
 
             if(AllowedUrls.Count > 0)
