@@ -7,7 +7,7 @@ namespace SearchEngine
     public class SubURL
     {
         public Uri Url;
-        public bool Visited;
+        public volatile bool Visited;
 
         public SubURL(Uri url)
         {
