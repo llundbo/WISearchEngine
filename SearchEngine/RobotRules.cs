@@ -9,7 +9,7 @@ namespace SearchEngine
         public List<string> AllowedUrls = new List<string>();
         public List<string> DisallowedUrls = new List<string>();
         bool whitelist = false;
-        public int Delay = 2;
+        public int Delay = 1;
 
         public RobotRules(string input)
         {
@@ -31,7 +31,7 @@ namespace SearchEngine
                         AllowedUrls.Add(rule.Substring(6).Trim());
 
                     else if (rule.StartsWith("Crawl-delay:"))
-                        Delay = int.Parse(rule.Substring(12));
+                       int.TryParse(rule.Substring(12), out Delay);
                 }
 
                 /*Console.WriteLine("Disallowed:");

@@ -147,8 +147,10 @@ namespace SearchEngine
             content = Regex.Replace(content, @"\s+", " ");
             Regex rgx = new Regex("[^a-zA-Z0-9 -]");
             content = rgx.Replace(content, "");
+          
 
             SortHyperLinks(hyperlinks);
+            ContentHandler.AddContent(content, url);
         }
 
         private void SortHyperLinks(List<string> hyperlinks)
@@ -228,7 +230,7 @@ namespace SearchEngine
         {
             int pageCount = 0;
 
-            int numOfThreads = 4;
+            int numOfThreads = 1;
 
             List<Task> tasklist = new List<Task>();
 

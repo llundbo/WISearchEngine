@@ -6,9 +6,9 @@ using System.Text.RegularExpressions;
 
 namespace SearchEngine
 {
-    class NearDuplicateDetection
+    static class NearDuplicateDetection
     {
-        static List<string> MakeShingles(string input)
+        public static string[] MakeShingles(string input)
         {
             string[] tempArray;
             List<string> shingleList = new List<string>();
@@ -25,10 +25,10 @@ namespace SearchEngine
                 shingleList.Add(tempArray[i] + " " + tempArray[i + 1] + " " + tempArray[i + 2]);
             }
 
-            return shingleList;
+            return shingleList.ToArray();
         }
 
-        static float CalculateJaccard(List<string> input1, List<string> input2)
+        public static float CalculateJaccard(string[] input1, string[] input2)
         {
             float overlap = 0;
             foreach (string shingle in input1)
@@ -40,7 +40,7 @@ namespace SearchEngine
                 }
             }
 
-            float union = input1.Count + input2.Count - overlap;
+            float union = input1.Length + input2.Length - overlap;
 
             return overlap / union;
         }
