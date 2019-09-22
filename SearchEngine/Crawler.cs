@@ -14,7 +14,8 @@ namespace SearchEngine
     {
         private List<Uri> SeedURLs = new List<Uri>();
         private Dictionary<string, RobotRules> RulesList = new Dictionary<string, RobotRules>();
-        private volatile Dictionary<string, QueueEntry> UrlQueue = new Dictionary<string, QueueEntry>();
+        private SyncedUrlQueue UrlQueue = new SyncedUrlQueue();
+        //private volatile Dictionary<string, QueueEntry> UrlQueue = new Dictionary<string, QueueEntry>();
 
         public Crawler()
         {
@@ -171,11 +172,11 @@ namespace SearchEngine
                     bool done = false;
                     while(!done)
                     {
-                        if(0 == Interlocked.Exchange(ref UrlQueue[url.Host].SubURLListMutex, 1))
+                        if(0 == Interlocked.Exchange(ref UrlQueue.Read(url.Host).SubURLListMutex, 1))
                         {
                             if (allowed)
                             {
-                                foreach (var suburl in UrlQueue[url.Host].SubURLs)
+                                foreach (var suburl in UrlQueue.Read(url.Host).SubURLs)
                                 {
                                     if (suburl.Url == url)
                                         allowed = false;
@@ -183,9 +184,9 @@ namespace SearchEngine
                             }
 
                             if (allowed)
-                                UrlQueue[url.Host].SubURLs.Add(new SubURL(url));
+                                UrlQueue.Read(url.Host).SubURLs.Add(new SubURL(url));
 
-                            Interlocked.Exchange(ref UrlQueue[url.Host].SubURLListMutex, 0);
+                            Interlocked.Exchange(ref UrlQueue.Read(url.Host).SubURLListMutex, 0);
                             done = true;
                         }
                         
@@ -237,29 +238,31 @@ namespace SearchEngine
                 {
                     do
                     {
-                        var threadKeys = UrlQueue.Keys.ToArray();
+                        var threadKeys = UrlQueue.Keys().ToArray();
 
                         foreach (string entry in threadKeys)
                         {
                             if (pageCount >= 1000)
                                 break;
 
-                            if (!(DateTime.Now > UrlQueue[entry].LastVisited.AddSeconds(UrlQueue[entry].CrawlDelay)))
+                            QueueEntry qEntry = UrlQueue.Read(entry);
+
+                            if (!(DateTime.Now > qEntry.LastVisited.AddSeconds(qEntry.CrawlDelay)))
                             {
                                 //Console.WriteLine("Delaying the access to:" + entry);
                                 continue;
                             }
 
-                            int idx = FindNextIndex(entry, UrlQueue[entry].SubURLs);
+                            int idx = FindNextIndex(entry, qEntry.SubURLs);
 
                             if (idx == -1)
                                 continue;
 
-                            Console.WriteLine("Fetching from: " + UrlQueue[entry].SubURLs[idx].ToString());
+                            Console.WriteLine("Fetching from: " + qEntry.SubURLs[idx].ToString());
 
-                            UrlQueue[entry].LastVisited = DateTime.Now;
+                            qEntry.LastVisited = DateTime.Now;
 
-                            FetchData(UrlQueue[entry].SubURLs[idx].ToString());
+                            FetchData(qEntry.SubURLs[idx].ToString());
 
                             pageCount++;
                             Console.WriteLine("PageCount: " + pageCount);
@@ -279,12 +282,12 @@ namespace SearchEngine
         {
             foreach (var url in suburls.ToArray())
             {
-                if (0 == Interlocked.Exchange(ref UrlQueue[host].VisitMutex, 1))
+                if (0 == Interlocked.Exchange(ref UrlQueue.Read(host).VisitMutex, 1))
                 {
                     if (url.Visited == false)
                     {
                         url.Visited = true;
-                        Interlocked.Exchange(ref UrlQueue[host].VisitMutex, 0);
+                        Interlocked.Exchange(ref UrlQueue.Read(host).VisitMutex, 0);
                         return suburls.IndexOf(url);
                     }
                 }
