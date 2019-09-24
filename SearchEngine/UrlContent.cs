@@ -6,8 +6,15 @@ namespace SearchEngine
 {
     class UrlContent
     {
-        public string url;
-        public string content;
-        public string[] shingles;
+        public string Url;
+        public string Content;
+        public string[] Shingles;
+
+        public UrlContent(string url, string content, string[] shingles)
+        {
+            this.Url = url;
+            this.Content = content;
+            this.Shingles = shingles;
+        }
     }
 }

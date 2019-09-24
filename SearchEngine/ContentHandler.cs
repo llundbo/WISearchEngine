@@ -10,26 +10,31 @@ namespace SearchEngine
         static private float jaccardThreshold = 0.5f;
 
         public static void AddContent (string content, string url)
-        {
-            UrlContent newContent = new UrlContent();
-            newContent.url = url;
-            newContent.content = content;
-            newContent.shingles = NearDuplicateDetection.MakeShingles(content);
+        {   
+            UrlContent newContent = new UrlContent(url, content, NearDuplicateDetection.MakeShingles(content));
 
             if (pageContent.Count == 0)
                 pageContent.Add(newContent);
 
+            bool matchFound = false;
             foreach (UrlContent page in pageContent.ToArray())
             {
-                float jaccard = NearDuplicateDetection.CalculateJaccard(newContent.shingles, page.shingles);
-                Console.WriteLine(jaccard + " " + newContent.url + " " + page.url);
+                float jaccard = NearDuplicateDetection.CalculateJaccard(newContent.Shingles, page.Shingles);
+                Console.WriteLine(jaccard + " " + newContent.Url + " " + page.Url);
 
-                if (jaccard < jaccardThreshold)
-                    pageContent.Add(newContent);
-                else
+                if (jaccard > jaccardThreshold)
+                {
+                    matchFound = true;
                     Console.WriteLine("Duplicate found");
-            }    
+                    break;
+                }
+            }
+            
+            if(!matchFound)
+            {
+                pageContent.Add(newContent);
+                Indexer.AddWordsToIndexList(content, pageContent.Count - 1);
+            }
         }
-
     }
 }

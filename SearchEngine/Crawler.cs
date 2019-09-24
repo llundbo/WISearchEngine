@@ -150,6 +150,7 @@ namespace SearchEngine
           
 
             SortHyperLinks(hyperlinks);
+            content = Indexer.RemoveStopWords(content.ToLower());
             ContentHandler.AddContent(content, url);
         }
 
