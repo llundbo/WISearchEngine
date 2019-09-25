@@ -14,13 +14,17 @@ namespace SearchEngine
             UrlContent newContent = new UrlContent(url, content, NearDuplicateDetection.MakeShingles(content));
 
             if (pageContent.Count == 0)
+            {
                 pageContent.Add(newContent);
+                Indexer.AddWordsToIndexList(content, pageContent.Count - 1);
+                return;
+            }
 
             bool matchFound = false;
             foreach (UrlContent page in pageContent.ToArray())
             {
                 float jaccard = NearDuplicateDetection.CalculateJaccard(newContent.Shingles, page.Shingles);
-                Console.WriteLine(jaccard + " " + newContent.Url + " " + page.Url);
+                //Console.WriteLine(jaccard + " " + newContent.Url + " " + page.Url);
 
                 if (jaccard > jaccardThreshold)
                 {

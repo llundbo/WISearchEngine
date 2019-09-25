@@ -7,11 +7,13 @@ using System.Text.RegularExpressions;
 using HtmlAgilityPack;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace SearchEngine
 {
     public class Crawler
     {
+        const int NUMBEROFTHREADS = 6;
         private List<Uri> SeedURLs = new List<Uri>();
         private Dictionary<string, RobotRules> RulesList = new Dictionary<string, RobotRules>();
         private SyncedUrlQueue UrlQueue = new SyncedUrlQueue();
@@ -26,21 +28,21 @@ namespace SearchEngine
         }
 
         private void AddSeeds()
-        {                   
+        {
             SeedURLs.Add(new Uri("https://eb.dk"));
-            //SeedURLs.Add(new Uri("https://migogaalborg.dk"));
-            //SeedURLs.Add(new Uri("https://nyheder.tv2.dk"));
-            //SeedURLs.Add(new Uri("https://bt.dk"));
-            //SeedURLs.Add(new Uri("https://moodle.org"));
-            //SeedURLs.Add(new Uri("https://dr.dk"));
-            //SeedURLs.Add(new Uri("https://ing.dk"));
-            //SeedURLs.Add(new Uri("https://nordjyske.dk"));
-            //SeedURLs.Add(new Uri("https://aalborgnu.dk"));
+            SeedURLs.Add(new Uri("https://migogaalborg.dk"));
+            SeedURLs.Add(new Uri("https://nyheder.tv2.dk"));
+            SeedURLs.Add(new Uri("https://bt.dk"));
+            SeedURLs.Add(new Uri("https://moodle.org"));
+            SeedURLs.Add(new Uri("https://dr.dk"));
+            SeedURLs.Add(new Uri("https://ing.dk"));
+            SeedURLs.Add(new Uri("https://nordjyske.dk"));
+            SeedURLs.Add(new Uri("https://aalborgnu.dk"));
         }
 
         private void InitializeSeedsToQueue()
         {
-            foreach(Uri seed in SeedURLs)
+            foreach (Uri seed in SeedURLs)
             {
                 GetRobotRules(seed);
 
@@ -84,11 +86,15 @@ namespace SearchEngine
                     {
                         continue;
                     }
+                    catch (ArgumentException)
+                    {
+                        break;
+                    }
                 }
-                
-                if(string.Empty == result)
+
+                if (string.Empty == result && !RulesList.ContainsKey(url.Host))
                     RulesList.Add(url.Host, new RobotRules(""));
-            }    
+            }
         }
 
         private void FetchData(string url)
@@ -110,55 +116,75 @@ namespace SearchEngine
 
             HtmlNodeCollection hyperNodes = doc.DocumentNode.SelectNodes("//a[@href]");
 
-            if(!(hyperNodes == null))
+            Task hyperlinkTask = Task.Run(() =>
             {
-                foreach (HtmlNode link in hyperNodes)
+                if (!(hyperNodes == null))
                 {
-                    string href = string.Empty;
-
-                    try
+                    foreach (HtmlNode link in hyperNodes)
                     {
-                        href = link.OuterHtml.Split("\"")[1];
-                    }
-                    catch (IndexOutOfRangeException)
-                    {
-                        continue;
-                    }
+                        string href = string.Empty;
 
-                    if (href.StartsWith("/"))
-                        href = url + href.Substring(1);
+                        try
+                        {
+                            href = link.OuterHtml.Split("\"")[1];
+                        }
+                        catch (IndexOutOfRangeException)
+                        {
+                            continue;
+                        }
 
-                    if (href.StartsWith("http"))
-                        hyperlinks.Add(href);
+                        if (href.StartsWith("/"))
+                            href = url + href.Substring(1);
+
+                        if (href.StartsWith("http"))
+                            hyperlinks.Add(href);
+                    }
                 }
-            }
 
-            HtmlNodeCollection contentNodes = doc.DocumentNode.SelectNodes("//body");
+                SortHyperLinks(hyperlinks);
+            });
 
-            if(!(contentNodes == null))
+            Task contentTask = Task.Run(() => 
             {
-                foreach (HtmlNode text in doc.DocumentNode.SelectNodes("//body"))
-                {
-                    if (!string.IsNullOrWhiteSpace(text.InnerText))
-                        content += text.InnerText.Trim().Replace("&nbsp", "");
-                }
-            }
-            
-            content = Regex.Replace(content, @"\s+", " ");
-            Regex rgx = new Regex("[^a-zA-Z0-9 -]");
-            content = rgx.Replace(content, "");
-          
+                HtmlNodeCollection contentNodes = doc.DocumentNode.SelectNodes("//body");
 
-            SortHyperLinks(hyperlinks);
-            content = Indexer.RemoveStopWords(content.ToLower());
-            ContentHandler.AddContent(content, url);
+                if (!(contentNodes == null))
+                {
+                    foreach (HtmlNode text in doc.DocumentNode.SelectNodes("//body"))
+                    {
+                        if (!string.IsNullOrWhiteSpace(text.InnerText))
+                            content += text.InnerText.Trim().Replace("&nbsp", "");
+                    }
+                }
+            });
+
+            Task.WaitAll(new[] { contentTask });
+
+            // Preprocessering the content
+            Task preprocesseringTask = Task.Run(() => 
+            {
+                content = Regex.Replace(content, @"\s+", " ");
+                Regex rgx = new Regex("[^a-zA-Z0-9 ÆØÅ æøå -]");
+                content = rgx.Replace(content, "");
+                content = Indexer.RemoveStopWords(content.ToLower());
+                ContentHandler.AddContent(content, url);
+            });
         }
 
         private void SortHyperLinks(List<string> hyperlinks)
         {
             foreach(string link in hyperlinks)
             {
-                Uri url = new Uri(link.Replace("www.", ""));
+                Uri url;
+
+                try
+                {
+                    url = new Uri(link.Replace("www.", ""));
+                }
+                catch (UriFormatException)
+                {
+                    continue;
+                }
 
                 if (UrlQueue.ContainsKey(url.Host))
                 {
@@ -195,7 +221,6 @@ namespace SearchEngine
                         
                     }
                 }
-                    
                 else
                 {
                     try
@@ -230,12 +255,12 @@ namespace SearchEngine
         private void HandleQueue()
         {
             int pageCount = 0;
-
-            int numOfThreads = 1;
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
 
             List<Task> tasklist = new List<Task>();
 
-            for (int i = 0; i < numOfThreads; i++)
+            for (int i = 0; i < NUMBEROFTHREADS; i++)
             {
                 tasklist.Add(Task.Run(() =>
                 {
@@ -268,16 +293,16 @@ namespace SearchEngine
                             FetchData(qEntry.SubURLs[idx].ToString());
 
                             pageCount++;
-                            Console.WriteLine("PageCount: " + pageCount);
+                            Console.WriteLine("PageCount: " + pageCount + " | " + "Pr.sec: " + (pageCount / (stopwatch.ElapsedMilliseconds / 1000f)));
                         }
-
                     } while (pageCount < 1000);
-
                 }));
             }
 
             Task.WaitAll(tasklist.ToArray());
 
+            stopwatch.Stop();
+            Console.WriteLine("Total time elapsed: " + (stopwatch.ElapsedMilliseconds / 1000f));
             Console.WriteLine("Queue Handler Complete...");
         }
 
