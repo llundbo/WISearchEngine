@@ -51,9 +51,15 @@ namespace SearchEngine
 
             foreach (string word in contentArray)
             {
-                if (!IndexedWords.ContainsKey(word))
-                    IndexedWords.Add(word, new List<int> { pageIndex });
-                else
+                try
+                {
+                    if (!IndexedWords.ContainsKey(word))
+                        IndexedWords.Add(word, new List<int> { pageIndex });
+                    else
+                    if (!IndexedWords[word].Contains(pageIndex))
+                        IndexedWords[word].Add(pageIndex);
+                }
+                catch(ArgumentException)
                 {
                     if (!IndexedWords[word].Contains(pageIndex))
                         IndexedWords[word].Add(pageIndex);

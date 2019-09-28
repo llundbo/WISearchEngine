@@ -8,7 +8,7 @@ namespace SearchEngine
     {
         public List<string> AllowedUrls = new List<string>();
         public List<string> DisallowedUrls = new List<string>();
-        bool whitelist = false;
+        public bool Whitelist = false;
         public int Delay = 1;
 
         public RobotRules(string input)
@@ -33,29 +33,9 @@ namespace SearchEngine
                     else if (rule.StartsWith("Crawl-delay:"))
                        int.TryParse(rule.Substring(12), out Delay);
                 }
-
-                /*Console.WriteLine("Disallowed:");
-                foreach (string line in DisallowedUrls)
-                    Console.WriteLine(line);
-
-                Console.WriteLine("Allowed:");
-                if (AllowedUrls.Count != 0)
-                {
-                    foreach(string line in AllowedUrls)
-                        Console.WriteLine(line);
-                }
-
-                Console.WriteLine("Delay: " + Delay);*/
             }
 
-            if(AllowedUrls.Count > 0)
-            {
-                whitelist = true;
-            }
-            else
-            {
-                whitelist = false;
-            }
+            Whitelist = AllowedUrls.Count > 0;
         }
     }
 }
