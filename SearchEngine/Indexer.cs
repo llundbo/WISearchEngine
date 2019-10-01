@@ -8,7 +8,7 @@ namespace SearchEngine
     static class Indexer
     {
         private static List<string> StopWords_Danish = GetStopWords("../../../danish_stopwords.txt");
-        private static Dictionary<string, List<int>> IndexedWords = new Dictionary<string, List<int>>();
+        private static Dictionary<string, List<Tuple<int, DocumentStat>>> IndexedWords = new Dictionary<string, List<Tuple<int, DocumentStat>>>();
 
         public static string RemoveStopWords(string input)
         {
@@ -54,15 +54,34 @@ namespace SearchEngine
                 try
                 {
                     if (!IndexedWords.ContainsKey(word))
-                        IndexedWords.Add(word, new List<int> { pageIndex });
+                    {
+                        IndexedWords.Add(word, new List<Tuple<int, DocumentStat>>{Tuple.Create(pageIndex, new DocumentStat())});  
+                    }
                     else
-                    if (!IndexedWords[word].Contains(pageIndex))
-                        IndexedWords[word].Add(pageIndex);
+                    {
+                        if (!IndexedWords[word].Exists(x => x.Item1 == pageIndex))
+                            IndexedWords[word].Add(Tuple.Create(pageIndex, new DocumentStat()));
+                        else
+                            IndexedWords[word].Find(x => x.Item1 == pageIndex).Item2.WordFreq++;
+                    }    
                 }
-                catch(ArgumentException)
+                catch(ArgumentException) // in case of race condition
                 {
-                    if (!IndexedWords[word].Contains(pageIndex))
-                        IndexedWords[word].Add(pageIndex);
+                    if (!IndexedWords[word].Exists(x => x.Item1 == pageIndex))
+                        IndexedWords[word].Add(Tuple.Create(pageIndex, new DocumentStat()));
+                    else
+                        IndexedWords[word].Find(x => x.Item1 == pageIndex).Item2.WordFreq++;
+                }
+            }
+        }
+
+        public static void CalcIdf()
+        {
+            foreach(var tupleList in IndexedWords.Values)
+            {
+                foreach(var tuple in tupleList)
+                {
+                    //tuple.Item2.IdfValue = Math.Log10(tupleList.Count/)
                 }
             }
         }
