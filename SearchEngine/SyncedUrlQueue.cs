@@ -40,12 +40,17 @@ namespace SearchEngine
             }
         }
 
-        public Dictionary<string, QueueEntry>.KeyCollection Keys()
+        public Dictionary<string, QueueEntry>.KeyCollection Keys(bool CopyInstance = false)
         {
             cacheLock.EnterReadLock();
             try
             {
-                return innerCache.Keys;
+                if (CopyInstance)
+                {
+                    return new Dictionary<string, QueueEntry>.KeyCollection(innerCache);
+                }   
+                else
+                    return innerCache.Keys;
             }
             finally
             {

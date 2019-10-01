@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Text;
 using System.Linq;
 using System.Text.RegularExpressions;
 using HtmlAgilityPack;
@@ -13,7 +12,7 @@ namespace SearchEngine
 {
     public class Crawler
     {
-        const int NUMBEROFTHREADS = 6;
+        const int NUMBEROFTHREADS = 8;
         private List<Uri> SeedURLs = new List<Uri>();
         private Dictionary<string, RobotRules> RulesList = new Dictionary<string, RobotRules>();
         private SyncedUrlQueue UrlQueue = new SyncedUrlQueue();
@@ -114,10 +113,10 @@ namespace SearchEngine
                 return;
             }
 
-            HtmlNodeCollection hyperNodes = doc.DocumentNode.SelectNodes("//a[@href]");
-
             Task hyperlinkTask = Task.Run(() =>
             {
+                HtmlNodeCollection hyperNodes = doc.DocumentNode.SelectNodes("//a[@href]");
+
                 if (!(hyperNodes == null))
                 {
                     foreach (HtmlNode link in hyperNodes)
@@ -144,7 +143,8 @@ namespace SearchEngine
                 SortHyperLinks(hyperlinks);
             });
 
-            Task contentTask = Task.Run(() => 
+            // Preprocessering the content
+            Task preprocesseringTask = Task.Run(() => 
             {
                 HtmlNodeCollection contentNodes = doc.DocumentNode.SelectNodes("//body");
 
@@ -156,13 +156,7 @@ namespace SearchEngine
                             content += text.InnerText.Trim().Replace("&nbsp", "");
                     }
                 }
-            });
 
-            Task.WaitAll(new[] { contentTask });
-
-            // Preprocessering the content
-            Task preprocesseringTask = Task.Run(() => 
-            {
                 content = Regex.Replace(content, @"\s+", " ");
                 Regex rgx = new Regex("[^a-zA-Z0-9 ÆØÅ æøå -]");
                 content = rgx.Replace(content, "");
@@ -189,37 +183,54 @@ namespace SearchEngine
                 if (UrlQueue.ContainsKey(url.Host))
                 {
                     bool allowed = true;
-                    foreach (string seg in url.Segments)
+
+                    if(RulesList[url.Host].Whitelist)
                     {
-                        if (RulesList[url.Host].DisallowedUrls.Contains(seg))
+                        allowed = false;
+                        foreach (string seg in RulesList[url.Host].AllowedUrls)
                         {
-                            allowed = false;
-                            break;
+                            if (url.AbsoluteUri.Contains(seg))
+                            {
+                                allowed = true;
+                                break;
+                            }
                         }
                     }
-
-                    bool done = false;
-                    while(!done)
+                    else
                     {
-                        if(0 == Interlocked.Exchange(ref UrlQueue.Read(url.Host).SubURLListMutex, 1))
+                        foreach (string seg in url.Segments)
                         {
-                            if (allowed)
+                            if (RulesList[url.Host].DisallowedUrls.Contains(seg))
+                            {
+                                allowed = false;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if(allowed)
+                    {
+                        bool done = false;
+                        while (!done)
+                        {
+                            if (0 == Interlocked.Exchange(ref UrlQueue.Read(url.Host).SubURLListMutex, 1))
                             {
                                 foreach (var suburl in UrlQueue.Read(url.Host).SubURLs)
                                 {
                                     if (suburl.Url == url)
                                         allowed = false;
                                 }
+
+                                if (allowed)
+                                    UrlQueue.Read(url.Host).SubURLs.Add(new SubURL(url));
+
+                                Interlocked.Exchange(ref UrlQueue.Read(url.Host).SubURLListMutex, 0);
+                                done = true;
                             }
 
-                            if (allowed)
-                                UrlQueue.Read(url.Host).SubURLs.Add(new SubURL(url));
-
-                            Interlocked.Exchange(ref UrlQueue.Read(url.Host).SubURLListMutex, 0);
-                            done = true;
                         }
-                        
                     }
+                    
                 }
                 else
                 {
@@ -231,18 +242,36 @@ namespace SearchEngine
                     {
                         GetRobotRules(new Uri("http://" + url.Host));
                     }
+
+                    if (!RulesList.ContainsKey(url.Host))
+                        continue;
                     
                     if (RulesList[url.Host].DisallowedUrls.Contains("/"))
                         continue;
 
                     // Tjekker kun om /path/ er indeholdt i disallowed og ikke om /path/her/ er disallowed og f.eks. /path/hermådugernegåhen er allowed
                     bool allowed = true;
-                    foreach (string seg in url.Segments)
+                    if(RulesList[url.Host].Whitelist)
                     {
-                        if (RulesList[url.Host].DisallowedUrls.Contains(seg))
+                        allowed = false;
+                        foreach (string seg in RulesList[url.Host].AllowedUrls)
                         {
-                            allowed = false;
-                            break;
+                            if (url.AbsoluteUri.Contains(seg))
+                            {
+                                allowed = true;
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        foreach (string seg in url.Segments)
+                        {
+                            if (RulesList[url.Host].DisallowedUrls.Contains(seg))
+                            {
+                                allowed = false;
+                                break;
+                            }
                         }
                     }
 
@@ -266,7 +295,16 @@ namespace SearchEngine
                 {
                     do
                     {
-                        var threadKeys = UrlQueue.Keys().ToArray();
+                        string[] threadKeys;
+
+                        try
+                        {
+                            threadKeys = UrlQueue.Keys().ToArray();
+                        }
+                        catch(ArgumentException)
+                        {
+                            continue;
+                        }
 
                         foreach (string entry in threadKeys)
                         {
