@@ -6,7 +6,12 @@ namespace SearchEngine
 {
     public class WordData
     {
-        List<Tuple<int, DocumentStat>> DocumentList = new List<Tuple<int, DocumentStat>>();
-        decimal idf = 0M;
+        public List<Tuple<int, DocumentStat>> DocumentStatList = new List<Tuple<int, DocumentStat>>();
+        public decimal idf = 0M;
+
+        public WordData(int pageIndex, DocumentStat doc)
+        {
+            DocumentStatList.Add(Tuple.Create(pageIndex, doc));
+        }
     }
 }

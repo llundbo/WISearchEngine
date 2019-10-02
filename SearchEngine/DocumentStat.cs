@@ -6,7 +6,9 @@ namespace SearchEngine
 {
     public class DocumentStat
     {
-        public int WordFreq = 0;
-        public decimal IdfValue = 0M;    
+        public int WordFreq = 1;
+        public decimal tfStar = 0M;
+        public decimal tf_idf = 0M;
+        public decimal tfstar_idf = 0M;
     }
 }

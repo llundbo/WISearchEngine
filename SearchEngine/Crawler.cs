@@ -12,18 +12,25 @@ namespace SearchEngine
 {
     public class Crawler
     {
-        const int NUMBEROFTHREADS = 8;
+        public static int NUMBEROFTHREADS;
+        public static int NUMBEROFPAGES;
         private List<Uri> SeedURLs = new List<Uri>();
         private Dictionary<string, RobotRules> RulesList = new Dictionary<string, RobotRules>();
         private SyncedUrlQueue UrlQueue = new SyncedUrlQueue();
         //private volatile Dictionary<string, QueueEntry> UrlQueue = new Dictionary<string, QueueEntry>();
 
-        public Crawler()
+        public Crawler(int pages, int threads = 4)
+        {
+            NUMBEROFPAGES = pages;
+            NUMBEROFTHREADS = threads;
+            Console.ReadKey();
+        }
+
+        public void StartCrawl()
         {
             AddSeeds();
             InitializeSeedsToQueue();
             HandleQueue();
-            Console.ReadKey();
         }
 
         private void AddSeeds()
@@ -308,7 +315,7 @@ namespace SearchEngine
 
                         foreach (string entry in threadKeys)
                         {
-                            if (pageCount >= 1000)
+                            if (pageCount >= NUMBEROFPAGES)
                                 break;
 
                             QueueEntry qEntry = UrlQueue.Read(entry);
@@ -333,7 +340,7 @@ namespace SearchEngine
                             pageCount++;
                             Console.WriteLine("PageCount: " + pageCount + " | " + "Pr.sec: " + (pageCount / (stopwatch.ElapsedMilliseconds / 1000f)));
                         }
-                    } while (pageCount < 1000);
+                    } while (pageCount < NUMBEROFPAGES);
                 }));
             }
 

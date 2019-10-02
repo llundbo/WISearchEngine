@@ -116,15 +116,20 @@ namespace SearchEngine
                     foreach (var tuple in wordData.DocumentStatList)
                     {
                         tuple.Item2.tfStar = (decimal)(1 + Math.Log10(tuple.Item2.WordFreq));
+                        tuple.Item2.tf_idf = tuple.Item2.WordFreq * wordData.idf;
+                        tuple.Item2.tfstar_idf = tuple.Item2.tfStar * wordData.idf;
                     }
                 }
             }
+        }
 
+        public static void CalculateIDF()
+        {
             foreach (var wordDataList in IndexedWords.Values)
             {
-                foreach(var wordata in wordDataList)
+                foreach (var wordData in wordDataList)
                 {
-                    wordata.Item2.tfStar = (decimal)(1 + Math.Log10(wordata.Item2.WordFreq));
+                    wordData.idf = (decimal)(Math.Log10(Crawler.NUMBEROFPAGES / wordData.DocumentStatList.Count));
                 }
             }
         }
