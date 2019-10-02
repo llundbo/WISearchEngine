@@ -8,7 +8,7 @@ namespace SearchEngine
     static class Indexer
     {
         private static List<string> StopWords_Danish = GetStopWords("../../../danish_stopwords.txt");
-        private static Dictionary<string, List<Tuple<int, DocumentStat>>> IndexedWords = new Dictionary<string, List<Tuple<int, DocumentStat>>>();
+        private static Dictionary<string, List<WordData>> IndexedWords = new Dictionary<string, List<WordData>>();
 
         public static string RemoveStopWords(string input)
         {
@@ -55,33 +55,76 @@ namespace SearchEngine
                 {
                     if (!IndexedWords.ContainsKey(word))
                     {
-                        IndexedWords.Add(word, new List<Tuple<int, DocumentStat>>{Tuple.Create(pageIndex, new DocumentStat())});  
+                        IndexedWords.Add(word, new List<WordData> {new WordData(pageIndex, new DocumentStat())});  
                     }
                     else
                     {
-                        if (!IndexedWords[word].Exists(x => x.Item1 == pageIndex))
-                            IndexedWords[word].Add(Tuple.Create(pageIndex, new DocumentStat()));
+                        if (!IndexedWords[word].Exists(x => x.DocumentStatList.Exists(y => y.Item1 == pageIndex)))
+                            IndexedWords[word].Add(new WordData(pageIndex, new DocumentStat()));
                         else
-                            IndexedWords[word].Find(x => x.Item1 == pageIndex).Item2.WordFreq++;
+                        {
+                            bool found = false;
+                            foreach (var item in IndexedWords[word])
+                            {
+                                foreach (var tuple in item.DocumentStatList)
+                                {
+                                    if (tuple.Item1 == pageIndex)
+                                    {
+                                        tuple.Item2.WordFreq++;
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                if (found)
+                                    break;
+                            }
+                        }
                     }    
                 }
                 catch(ArgumentException) // in case of race condition
                 {
-                    if (!IndexedWords[word].Exists(x => x.Item1 == pageIndex))
-                        IndexedWords[word].Add(Tuple.Create(pageIndex, new DocumentStat()));
+                    if (!IndexedWords[word].Exists(x => x.DocumentStatList.Exists(y => y.Item1 == pageIndex)))
+                        IndexedWords[word].Add(new WordData(pageIndex, new DocumentStat()));
                     else
-                        IndexedWords[word].Find(x => x.Item1 == pageIndex).Item2.WordFreq++;
+                    {
+                        bool found = false;
+                        foreach (var item in IndexedWords[word])
+                        {
+                            foreach (var tuple in item.DocumentStatList)
+                            {
+                                if (tuple.Item1 == pageIndex)
+                                {
+                                    tuple.Item2.WordFreq++;
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            if (found)
+                                break;
+                        }
+                    }
                 }
             }
         }
 
-        public static void CalcIdf()
+        public static void Calculatetfstar()
         {
-            foreach(var tupleList in IndexedWords.Values)
+            foreach (var wordDataList in IndexedWords.Values)
             {
-                foreach(var tuple in tupleList)
+                foreach (var wordData in wordDataList)
                 {
-                    //tuple.Item2.IdfValue = Math.Log10(tupleList.Count/)
+                    foreach (var tuple in wordData.DocumentStatList)
+                    {
+                        tuple.Item2.tfStar = (decimal)(1 + Math.Log10(tuple.Item2.WordFreq));
+                    }
+                }
+            }
+
+            foreach (var wordDataList in IndexedWords.Values)
+            {
+                foreach(var wordata in wordDataList)
+                {
+                    wordata.Item2.tfStar = (decimal)(1 + Math.Log10(wordata.Item2.WordFreq));
                 }
             }
         }
