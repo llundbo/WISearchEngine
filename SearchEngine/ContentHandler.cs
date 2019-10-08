@@ -6,7 +6,7 @@ namespace SearchEngine
 {
     static class ContentHandler
     {
-        static List<UrlContent> pageContent = new List<UrlContent>();
+        public static List<UrlContent> pageContent = new List<UrlContent>();
         static private float jaccardThreshold = 0.5f;
 
         public static void AddContent (string content, string url)

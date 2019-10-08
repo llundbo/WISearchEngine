@@ -9,6 +9,7 @@ namespace SearchEngine
         public string Url;
         public string Content;
         public string[] Shingles;
+        public float Length;
 
         public UrlContent(string url, string content, string[] shingles)
         {

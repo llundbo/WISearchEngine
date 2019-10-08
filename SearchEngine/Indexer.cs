@@ -8,7 +8,7 @@ namespace SearchEngine
     static class Indexer
     {
         private static List<string> StopWords_Danish = GetStopWords("../../../danish_stopwords.txt");
-        private static Dictionary<string, List<WordData>> IndexedWords = new Dictionary<string, List<WordData>>();
+        public static Dictionary<string, WordData> IndexedWords = new Dictionary<string, WordData>();
 
         public static string RemoveStopWords(string input)
         {
@@ -55,52 +55,38 @@ namespace SearchEngine
                 {
                     if (!IndexedWords.ContainsKey(word))
                     {
-                        IndexedWords.Add(word, new List<WordData> {new WordData(pageIndex, new DocumentStat())});  
+                        IndexedWords.Add(word, new WordData(pageIndex, new DocumentStat()));  
                     }
                     else
                     {
-                        if (!IndexedWords[word].Exists(x => x.DocumentStatList.Exists(y => y.Item1 == pageIndex)))
-                            IndexedWords[word].Add(new WordData(pageIndex, new DocumentStat()));
+                        if (!IndexedWords[word].DocumentStatList.Exists(y => y.Item1 == pageIndex))
+                            IndexedWords[word].DocumentStatList.Add(Tuple.Create(pageIndex, new DocumentStat()));
                         else
                         {
-                            bool found = false;
-                            foreach (var item in IndexedWords[word])
+                            foreach (var tuple in IndexedWords[word].DocumentStatList)
                             {
-                                foreach (var tuple in item.DocumentStatList)
+                                if (tuple.Item1 == pageIndex)
                                 {
-                                    if (tuple.Item1 == pageIndex)
-                                    {
-                                        tuple.Item2.WordFreq++;
-                                        found = true;
-                                        break;
-                                    }
-                                }
-                                if (found)
+                                    tuple.Item2.WordFreq++;
                                     break;
+                                }
                             }
                         }
                     }    
                 }
                 catch(ArgumentException) // in case of race condition
                 {
-                    if (!IndexedWords[word].Exists(x => x.DocumentStatList.Exists(y => y.Item1 == pageIndex)))
-                        IndexedWords[word].Add(new WordData(pageIndex, new DocumentStat()));
+                    if (!IndexedWords[word].DocumentStatList.Exists(y => y.Item1 == pageIndex))
+                        IndexedWords[word].DocumentStatList.Add(Tuple.Create(pageIndex, new DocumentStat()));
                     else
                     {
-                        bool found = false;
-                        foreach (var item in IndexedWords[word])
+                        foreach (var tuple in IndexedWords[word].DocumentStatList)
                         {
-                            foreach (var tuple in item.DocumentStatList)
+                            if (tuple.Item1 == pageIndex)
                             {
-                                if (tuple.Item1 == pageIndex)
-                                {
-                                    tuple.Item2.WordFreq++;
-                                    found = true;
-                                    break;
-                                }
-                            }
-                            if (found)
+                                tuple.Item2.WordFreq++;
                                 break;
+                            }
                         }
                     }
                 }
@@ -109,28 +95,36 @@ namespace SearchEngine
 
         public static void Calculatetfstar()
         {
-            foreach (var wordDataList in IndexedWords.Values)
+            foreach (var wordData in IndexedWords.Values)
             {
-                foreach (var wordData in wordDataList)
+                foreach (var tuple in wordData.DocumentStatList)
                 {
-                    foreach (var tuple in wordData.DocumentStatList)
-                    {
-                        tuple.Item2.tfStar = (decimal)(1 + Math.Log10(tuple.Item2.WordFreq));
-                        tuple.Item2.tf_idf = tuple.Item2.WordFreq * wordData.idf;
-                        tuple.Item2.tfstar_idf = tuple.Item2.tfStar * wordData.idf;
-                    }
+                    tuple.Item2.tfStar = (decimal)(1 + Math.Log10(tuple.Item2.WordFreq));
+                    tuple.Item2.tf_idf = tuple.Item2.WordFreq * wordData.idf;
+                    tuple.Item2.tfstar_idf = tuple.Item2.tfStar * wordData.idf;
                 }
             }
         }
 
         public static void CalculateIDF()
         {
-            foreach (var wordDataList in IndexedWords.Values)
+            foreach (var wordData in IndexedWords.Values)
             {
-                foreach (var wordData in wordDataList)
+                wordData.idf = (decimal)(Math.Log10(Crawler.NUMBEROFPAGES / wordData.DocumentStatList.Count));
+            }
+        }
+
+        public static void CalculateLength()
+        {
+            decimal sum = 0M;
+            foreach (var urlContent in ContentHandler.pageContent)
+            {
+                foreach (string str in urlContent.Content.Split(' '))
                 {
-                    wordData.idf = (decimal)(Math.Log10(Crawler.NUMBEROFPAGES / wordData.DocumentStatList.Count));
+                    sum += (decimal)Math.Pow((double)IndexedWords[str].idf, 2f);
                 }
+
+                urlContent.Length = (float)Math.Sqrt((double)sum);
             }
         }
     }
