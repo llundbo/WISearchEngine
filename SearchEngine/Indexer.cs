@@ -121,9 +121,15 @@ namespace SearchEngine
             {
                 foreach (string str in urlContent.Content.Split(' '))
                 {
-                    sum += (decimal)Math.Pow((double)IndexedWords[str].idf, 2f);
+                    try
+                    {
+                        sum += (decimal)Math.Pow((double)IndexedWords[str].idf, 2f);
+                    }
+                    catch(KeyNotFoundException)
+                    {
+                        continue;
+                    }
                 }
-
                 urlContent.Length = (float)Math.Sqrt((double)sum);
             }
         }

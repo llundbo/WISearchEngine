@@ -23,7 +23,6 @@ namespace SearchEngine
         {
             NUMBEROFPAGES = pages;
             NUMBEROFTHREADS = threads;
-            Console.ReadKey();
         }
 
         public void StartCrawl()

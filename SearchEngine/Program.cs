@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace SearchEngine
 {
@@ -6,22 +7,29 @@ namespace SearchEngine
     {
         static void Main(string[] args)
         {
-            Crawler crawler = new Crawler(200, 3);
+            Crawler crawler = new Crawler(50, 4);
             crawler.StartCrawl();
+            Thread.Sleep(3000);
             Indexer.CalculateIDF();
             Indexer.Calculatetfstar();
             Indexer.CalculateLength();
-            Console.WriteLine("Input search term:");
-            string input = Console.ReadLine();
-            var resultList = QueryRanker.CosineScore(input);
 
-            int idx = 0;
-            foreach (var result in resultList)
+            while(true)
             {
-                Console.WriteLine(++idx + " ("+ result.Item1 + "): " + result.Item2);
-            }
+                Console.WriteLine("Input search term:");
+                string input = Console.ReadLine();
+                var resultList = QueryRanker.CosineScore(input);
 
-            Console.ReadKey();
+                if (resultList.Count == 0)
+                    Console.WriteLine("No search results found..");
+                else
+                {
+                    for (int i = 0; i < Math.Min(10, resultList.Count); i++)
+                    {
+                        Console.WriteLine((i + 1) + " (" + resultList[i].Item1 + "): " + resultList[i].Item2);
+                    }
+                }
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace SearchEngine
@@ -8,7 +9,7 @@ namespace SearchEngine
     {
         public static List<Tuple<float, string>> CosineScore(string query)
         {
-            float[] scores = new float[Crawler.NUMBEROFPAGES];
+            float[] scores = new float[ContentHandler.pageContent.Count];
 
             string[] querySplit = query.Trim().ToLower().Split(' ');
 
@@ -19,7 +20,18 @@ namespace SearchEngine
                     if(urlContent.Content.Contains(term))
                     {
                         int scoreidx = ContentHandler.pageContent.IndexOf(urlContent);
-                        scores[scoreidx] += (float)Indexer.IndexedWords[term].DocumentStatList.Find(x => x.Item1 == scoreidx).Item2.tfstar_idf * CalculateQueryWeights(term);
+                        try
+                        {
+                            scores[scoreidx] += (float)Indexer.IndexedWords[term].DocumentStatList.Find(x => x.Item1 == scoreidx).Item2.tfstar_idf * CalculateQueryWeights(term);
+                        }
+                        catch (NullReferenceException)
+                        {
+                            continue;
+                        }
+                        catch (KeyNotFoundException)
+                        {
+                            continue;
+                        }
                     }
                 }
             }
@@ -40,6 +52,7 @@ namespace SearchEngine
             }
 
             resultList.Sort(resultSort);
+            resultList.Reverse();
             return resultList;
         }
 
