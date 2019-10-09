@@ -14,9 +14,9 @@ namespace SearchEngine
     {
         public static int NUMBEROFTHREADS;
         public static int NUMBEROFPAGES;
-        private List<Uri> SeedURLs = new List<Uri>();
-        private Dictionary<string, RobotRules> RulesList = new Dictionary<string, RobotRules>();
-        private SyncedUrlQueue UrlQueue = new SyncedUrlQueue();
+        private readonly List<Uri> SeedURLs = new List<Uri>();
+        private readonly Dictionary<string, RobotRules> RulesList = new Dictionary<string, RobotRules>();
+        public SyncedUrlQueue UrlQueue = new SyncedUrlQueue();
         //private volatile Dictionary<string, QueueEntry> UrlQueue = new Dictionary<string, QueueEntry>();
 
         public Crawler(int pages, int threads = 4)
@@ -146,7 +146,7 @@ namespace SearchEngine
                     }
                 }
 
-                SortHyperLinks(hyperlinks);
+                SortHyperLinks(new Uri(url).Host, hyperlinks);
             });
 
             // Preprocessering the content
@@ -171,7 +171,7 @@ namespace SearchEngine
             });
         }
 
-        private void SortHyperLinks(List<string> hyperlinks)
+        private void SortHyperLinks(string fromHost, List<string> hyperlinks)
         {
             foreach(string link in hyperlinks)
             {
@@ -228,15 +228,18 @@ namespace SearchEngine
                                 }
 
                                 if (allowed)
+                                {
                                     UrlQueue.Read(url.Host).SubURLs.Add(new SubURL(url));
 
+                                    if (!UrlQueue.Read(url.Host).RefList.Contains(fromHost) && url.Host != fromHost)
+                                        UrlQueue.Read(url.Host).RefList.Add(fromHost);
+                                }
+                                    
                                 Interlocked.Exchange(ref UrlQueue.Read(url.Host).SubURLListMutex, 0);
                                 done = true;
                             }
-
                         }
                     }
-                    
                 }
                 else
                 {

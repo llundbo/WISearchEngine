@@ -51,12 +51,12 @@ namespace SearchEngine
                 idx++;
             }
 
-            resultList.Sort(resultSort);
+            resultList.Sort(ResultSort);
             resultList.Reverse();
             return resultList;
         }
 
-        private static int resultSort(Tuple<float, string> t1, Tuple<float, string> t2)
+        private static int ResultSort(Tuple<float, string> t1, Tuple<float, string> t2)
         {
             return t1.Item1.CompareTo(t2.Item1);
         }

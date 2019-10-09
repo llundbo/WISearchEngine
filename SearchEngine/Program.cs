@@ -5,7 +5,7 @@ namespace SearchEngine
 {
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             Crawler crawler = new Crawler(50, 4);
             crawler.StartCrawl();

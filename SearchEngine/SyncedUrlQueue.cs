@@ -58,6 +58,24 @@ namespace SearchEngine
             }
         }
 
+        public Dictionary<string, QueueEntry>.ValueCollection Values(bool CopyInstance = false)
+        {
+            cacheLock.EnterReadLock();
+            try
+            {
+                if (CopyInstance)
+                {
+                    return new Dictionary<string, QueueEntry>.ValueCollection(innerCache);
+                }
+                else
+                    return innerCache.Values;
+            }
+            finally
+            {
+                cacheLock.ExitReadLock();
+            }
+        }
+
         public void Add(string key, QueueEntry value)
         {
             cacheLock.EnterWriteLock();

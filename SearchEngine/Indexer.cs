@@ -7,7 +7,7 @@ namespace SearchEngine
 {
     static class Indexer
     {
-        private static List<string> StopWords_Danish = GetStopWords("../../../danish_stopwords.txt");
+        private static readonly List<string> StopWords_Danish = GetStopWords("../../../danish_stopwords.txt");
         public static Dictionary<string, WordData> IndexedWords = new Dictionary<string, WordData>();
 
         public static string RemoveStopWords(string input)
