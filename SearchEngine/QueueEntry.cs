@@ -12,6 +12,7 @@ namespace SearchEngine
         public int CrawlDelay;
         public DateTime LastVisited;
         public List<string> RefList = new List<string>();
+        public List<string> PointToList = new List<string>();
 
         public QueueEntry(List<Uri> inputlist, int delay)
         {

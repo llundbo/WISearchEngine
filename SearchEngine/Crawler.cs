@@ -35,14 +35,14 @@ namespace SearchEngine
         private void AddSeeds()
         {
             SeedURLs.Add(new Uri("https://eb.dk"));
-            SeedURLs.Add(new Uri("https://migogaalborg.dk"));
+            /*SeedURLs.Add(new Uri("https://migogaalborg.dk"));
             SeedURLs.Add(new Uri("https://nyheder.tv2.dk"));
             SeedURLs.Add(new Uri("https://bt.dk"));
             SeedURLs.Add(new Uri("https://moodle.org"));
             SeedURLs.Add(new Uri("https://dr.dk"));
             SeedURLs.Add(new Uri("https://ing.dk"));
             SeedURLs.Add(new Uri("https://nordjyske.dk"));
-            SeedURLs.Add(new Uri("https://aalborgnu.dk"));
+            SeedURLs.Add(new Uri("https://aalborgnu.dk"));*/
         }
 
         private void InitializeSeedsToQueue()
@@ -233,6 +233,9 @@ namespace SearchEngine
 
                                     if (!UrlQueue.Read(url.Host).RefList.Contains(fromHost) && url.Host != fromHost)
                                         UrlQueue.Read(url.Host).RefList.Add(fromHost);
+
+                                    if (!UrlQueue.Read(fromHost).PointToList.Contains(url.Host) && url.Host != fromHost)
+                                        UrlQueue.Read(fromHost).PointToList.Add(url.Host);
                                 }
                                     
                                 Interlocked.Exchange(ref UrlQueue.Read(url.Host).SubURLListMutex, 0);

@@ -14,7 +14,22 @@ namespace SearchEngine
             Indexer.Calculatetfstar();
             Indexer.CalculateLength();
 
-            while(true)
+            PageRanker pageRanker = new PageRanker(crawler);
+
+            var matrix = pageRanker.BuildTransitionProbabilityMatrix();
+
+            for (int i = 0; i < crawler.UrlQueue.Count; i++)
+            {
+                for (int j = 0; j < crawler.UrlQueue.Count; j++)
+                {
+                    Console.Write(matrix[i, j]);
+                }
+                Console.Write(Environment.NewLine + Environment.NewLine);
+            }
+
+            Console.ReadLine();
+
+            while (true)
             {
                 Console.WriteLine("Input search term:");
                 string input = Console.ReadLine();

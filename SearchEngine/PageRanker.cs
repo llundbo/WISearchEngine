@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace SearchEngine
@@ -7,12 +8,13 @@ namespace SearchEngine
     public class PageRanker
     {
         private readonly Crawler _crawler;
+        private readonly string[] _keyslist;
 
-        public void BuildTransitionProbabilityMatrix()
+        public float[,] BuildTransitionProbabilityMatrix()
         {
             int count = _crawler.UrlQueue.Count;
             float[,] matrix = new float[count,count];
-            
+          
             for(int i = 0; i < count; i++)
             {
                 for(int j = 0; j < count; j++)
@@ -20,27 +22,23 @@ namespace SearchEngine
                     matrix[i,j] = CalculateProbability(i, j);
                 }
             }
+
+            return matrix;
         }
 
         public PageRanker(Crawler crawler)
         {
             _crawler = crawler;
+            _keyslist = _crawler.UrlQueue.Keys().ToArray();
         }
 
         private float CalculateProbability(int i, int j)
         {
-            throw new NotImplementedException();
-            /*float result = 0f;
-            int occurrence = 0;
+            int pointToListCount = _crawler.UrlQueue.Read(_keyslist[i]).PointToList.Count;
 
-            List<QueueEntry> queueEntryList = _crawler.UrlQueue.Values();
-
-            foreach (var refr in _crawler.UrlQueue.Values())
-            {
-                refr.RefList
-            }
-
-            return result;*/
+            if (_crawler.UrlQueue.Read(_keyslist[i]).PointToList.Contains(_keyslist[j]))
+                return pointToListCount == 0 ? 0 : 1 / pointToListCount;
+            else return 0;
         }
 
     }
